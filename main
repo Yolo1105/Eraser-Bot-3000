@@ -1,0 +1,133 @@
+#Part A: Default settings
+
+import cv2
+import numpy as np
+from picamera import PiCamera
+from picamera.array import PiRGBArray
+import RPi.GPIO as GPIO        
+from time import sleep
+# GPIO Setup
+GPIO.setwarnings(False)
+
+#Part B: Setup the input and output
+input1 = 23
+input2 = 24
+en = 25
+temp1=1
+
+# Set variable for servoPin
+servoPin = 17
+# Set GPIO mode to GPIO.BCM
+GPIO.setmode(GPIO.BCM)
+# Set servoPin as GPIO.OUT
+GPIO.setup(servoPin,GPIO.OUT)
+pwm = GPIO.PWM(servoPin, 100)
+
+# Set GPIO mode to GPIO.BCM
+GPIO.setmode(GPIO.BCM)
+# Set for output
+GPIO.setup(input1,GPIO.OUT)
+GPIO.setup(input2,GPIO.OUT)
+GPIO.setup(en,GPIO.OUT)
+GPIO.output(input1,GPIO.LOW)
+GPIO.output(input2,GPIO.LOW)
+p=GPIO.PWM(en,1000)
+
+# Set startup
+p.start(25)
+print("\n")
+print("The default speed & direction of motor is LOW & Forward.....")
+print("r-run s-stop f-forward b-backward l-low m-medium h-high e-exit")
+print("\n")    
+
+GPIO.output(input1,GPIO.HIGH)
+
+#Part C: Pi Camera Setup
+while(True):
+  # Make a camera object
+  camera = PiCamera()
+  camera.resolution = (640,480)
+  camera.framerate = 30
+  # Set camera resolution & frame rate
+  rawCapture = PiRGBArray(camera, size=(640,480))
+  pixels = 640*480
+   
+  # continutous capturing pictures
+  for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+    frame = frame.array
+    #Part D: Color Detection
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # Black Color Detection
+    red_lower = np.array([0,0,0])
+    red_upper = np.array([180, 255, 255])
+    red_mask = cv2.inRange(hsv, red_lower, red_upper)
+    result_red = cv2.bitwise_and(frame, frame, mask=red_mask)
+    print (type(result_red))
+ 
+    # Display the final result
+    cv2.imshow("window",result_red)
+    print(result_red)
+    rawCapture.truncate(0) #Stop rawCapture to clear the stream in preparation for the next frame
+
+    # Run motor if detected colors
+    if np.any(result_red !=0):
+        x= input()
+        print("run")
+        if x == 'r':
+            if(temp1==1):
+             GPIO.output(input1,GPIO.HIGH)
+             GPIO.output(input2,GPIO.LOW)
+             print("forward")
+             x='z'
+            else:
+             GPIO.output(input1,GPIO.LOW)
+             GPIO.output(input2,GPIO.HIGH)
+             print("backward")
+             x='z'
+
+        elif x=='s':
+            print("stop")
+            GPIO.output(input1,GPIO.LOW)
+            GPIO.output(input2,GPIO.LOW)
+            x='z'
+
+        elif x=='f':
+            print("forward")
+            GPIO.output(input1,GPIO.HIGH)
+            GPIO.output(input2,GPIO.LOW)
+            temp1=1
+            x='z'
+
+        elif x=='b':
+            print("backward")
+            GPIO.output(input1,GPIO.LOW)
+            GPIO.output(input2,GPIO.HIGH)
+            temp1=0
+            x='z'
+
+        elif x=='l':
+            print("low")
+            p.ChangeDutyCycle(25)
+            x='z'
+
+        elif x=='m':
+            print("medium")
+            p.ChangeDutyCycle(50)
+            x='z'
+
+        elif x=='h':
+            print("high")
+            p.ChangeDutyCycle(75)
+            x='z'
+         
+        elif x=='e':
+            GPIO.cleanup()
+            break
+           
+        else:
+            print("<<<  wrong data  >>>")
+            print("please enter the defined data to continue.....")
+
+
+GPIO.cleanup()
