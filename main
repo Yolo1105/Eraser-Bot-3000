@@ -59,21 +59,37 @@ while(True):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Black Color Detection
-    red_lower = np.array([0,0,0])
+    black_lower = np.array([0,0,0])
+    black_upper = np.array([180, 255, 255])
+    black_mask = cv2.inRange(hsv, black_lower, black_upper)
+    result_black = cv2.bitwise_and(frame, frame, mask=black_mask)
+    print (type(result_black))
+ 
+    # Red Color Detection
+    red_lower = np.array([160,70,50])
     red_upper = np.array([180, 255, 255])
     red_mask = cv2.inRange(hsv, red_lower, red_upper)
     result_red = cv2.bitwise_and(frame, frame, mask=red_mask)
     print (type(result_red))
- 
+
+    # Green Color Detection
+    green_lower = np.array([50, 255, 255])
+    green_upper = np.array([70, 255, 255])
+    green_mask = cv2.inRange(hsv, green_lower, green_upper)
+    result_green = cv2.bitwise_and(frame, frame, mask=green_mask)    
+    print (type(result_green))
+
     # Display the final result
-    cv2.imshow("window",result_red)
-    print(result_red)
+    cv2.imshow("window",result_black)
+    print(result_black)
     rawCapture.truncate(0) #Stop rawCapture to clear the stream in preparation for the next frame
 
     # Run motor if detected colors
-    if np.any(result_red !=0):
-        x= input()
+    if np.any(result_black !=0 or result_red !=0 or result_green !=0):
+        # Solution 1: input a certain instruction
+        x = input()
         print("run")
+        # type in r to run
         if x == 'r':
             if(temp1==1):
              GPIO.output(input1,GPIO.HIGH)
@@ -86,48 +102,86 @@ while(True):
              print("backward")
              x='z'
 
-        elif x=='s':
+        # type in s to stop
+        elif x == 's':
             print("stop")
             GPIO.output(input1,GPIO.LOW)
             GPIO.output(input2,GPIO.LOW)
             x='z'
 
-        elif x=='f':
+        # type in f to move forward
+        elif x == 'f':
             print("forward")
             GPIO.output(input1,GPIO.HIGH)
             GPIO.output(input2,GPIO.LOW)
             temp1=1
             x='z'
 
-        elif x=='b':
+        # type in b to move backward
+        elif x == 'b':
             print("backward")
             GPIO.output(input1,GPIO.LOW)
             GPIO.output(input2,GPIO.HIGH)
             temp1=0
             x='z'
 
-        elif x=='l':
+        # type in l to change the moving frequency to low
+        elif x == 'l':
             print("low")
             p.ChangeDutyCycle(25)
             x='z'
 
-        elif x=='m':
+        # type in m to change the moving frequency to medium
+        elif x == 'm':
             print("medium")
             p.ChangeDutyCycle(50)
             x='z'
 
-        elif x=='h':
+        # type in h to change the moving frequency to high
+        elif x == 'h':
             print("high")
             p.ChangeDutyCycle(75)
             x='z'
          
-        elif x=='e':
+        # type in e to end
+        elif x == 'e':
             GPIO.cleanup()
             break
-           
+        
+        # if error exists
         else:
-            print("<<<  wrong data  >>>")
-            print("please enter the defined data to continue.....")
+            print("<<<  Input Error!! >>>")
+            print("Please enter the right instructions to continue.....")
+            print("Available instructions: r , s, f, b , l, m, h, e")
+        
+    # Solution 2: Move rightward, upwards, leftwards, downwards and repeat
+    while True:
+        # moving forwards
+        GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+        GPIO.output(input2,GPIO.LOW)
+        print("forward")
 
+        GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
+        GPIO.output(input2,GPIO.LOW)
+        print("forward")
+
+        # if detected the markers
+        if np.any(result_black !=0 or result_red !=0 or result_green !=0):
+            GPIO.output(input1,GPIO.LOW) # left and right wheel moves backwards
+            GPIO.output(input2,GPIO.HIGH)
+            print("backward")
+            if white:
+                GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+                GPIO.output(input2,GPIO.LOW)
+                print("forward") # loop again
+
+        # turn left
+        GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+        GPIO.output(input2,GPIO.LOW)
+        print("forward")
+
+        GPIO.output(input1,GPIO.LOW) # right wheel moves backwards
+        GPIO.output(input2,GPIO.HIGH)
+        print("backward")
 
 GPIO.cleanup()
