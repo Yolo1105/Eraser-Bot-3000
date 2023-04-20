@@ -1,31 +1,58 @@
-#Part A: Default settings
-
+: Default settings
+#Part A
 import cv2
 import numpy as np
 from picamera import PiCamera
 from picamera.array import PiRGBArray
-import RPi.GPIO as GPIO        
+import RPi.GPIO as GPIO       
 from time import sleep
 # GPIO Setup
 GPIO.setwarnings(False)
 
+
 #Part B: Setup the input and output
-input1 = 23
-input2 = 24
+
+
+# Left wheel
+input1 = 14
+input2 = 4
 en = 25
 temp1=1
 
-# Set variable for servoPin
+
+# Right wheel
+input3 = 17
+input4 = 5
+en2 = 26
+
+
+# Set variable for servoPin left wheel
 servoPin = 17
-# Set GPIO mode to GPIO.BCM
-GPIO.setmode(GPIO.BCM)
-# Set servoPin as GPIO.OUT
-GPIO.setup(servoPin,GPIO.OUT)
-pwm = GPIO.PWM(servoPin, 100)
+
+
+# Set variable for servoPin right wheel
+servoPin2 = 18
+
 
 # Set GPIO mode to GPIO.BCM
 GPIO.setmode(GPIO.BCM)
-# Set for output
+
+
+# Set servoPin as GPIO.OUT for left wheel
+GPIO.setup(servoPin,GPIO.OUT)
+pwm = GPIO.PWM(servoPin, 100)
+
+
+# Set servoPin2 as GPIO.OUT for right wheel
+GPIO.setup(servoPin2,GPIO.OUT)
+pwm = GPIO.PWM(servoPin2,100)
+
+
+# Set GPIO mode to GPIO.BCM
+GPIO.setmode(GPIO.BCM)
+
+
+# Set for output for left wheel
 GPIO.setup(input1,GPIO.OUT)
 GPIO.setup(input2,GPIO.OUT)
 GPIO.setup(en,GPIO.OUT)
@@ -33,198 +60,585 @@ GPIO.output(input1,GPIO.LOW)
 GPIO.output(input2,GPIO.LOW)
 p=GPIO.PWM(en,1000)
 
+
+# Set for output for right wheel
+GPIO.setup(input3,GPIO.OUT)
+GPIO.setup(input4,GPIO.OUT)
+GPIO.setup(en2,GPIO.OUT)
+GPIO.output(input3,GPIO.LOW)
+GPIO.output(input4,GPIO.LOW)
+p2=GPIO.PWM(en2,1000)
+
+
 # Set startup
 p.start(25)
+p2.start(25)
 print("\n")
 print("The default speed & direction of motor is LOW & Forward.....")
 print("r-run s-stop f-forward b-backward l-low m-medium h-high e-exit")
-print("\n")    
+print("\n")   
+
 
 GPIO.output(input1,GPIO.HIGH)
+GPIO.output(input2,GPIO.HIGH)
+
+
+# Automatic reaction to start
+GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+GPIO.output(input2,GPIO.LOW)
+print("forward")
+
+
+GPIO.output(input3,GPIO.HIGH) # right wheel moves forwards
+GPIO.output(input4,GPIO.LOW)
+print("forward")
+
 
 #Part C: Pi Camera Setup
 while(True):
-  # Make a camera object
-  camera = PiCamera()
-  camera.resolution = (640,480)
-  camera.framerate = 30
-  # Set camera resolution & frame rate
-  rawCapture = PiRGBArray(camera, size=(640,480))
-  pixels = 640*480
-   
-  # continutous capturing pictures
-  for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-    frame = frame.array
-    #Part D: Color Detection
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    # Black Color Detection
-    black_lower = np.array([0,0,0])
-    black_upper = np.array([180, 255, 255])
-    black_mask = cv2.inRange(hsv, black_lower, black_upper)
-    result_black = cv2.bitwise_and(frame, frame, mask=black_mask)
-    print (type(result_black))
+ # Make a camera object
+ camera = PiCamera()
+ camera.resolution = (640,480)
+ camera.framerate = 30
+ # Set camera resolution & frame rate
+ rawCapture = PiRGBArray(camera, size=(640,480))
+ pixels = 640*480
  
-    # Red Color Detection
-    red_lower = np.array([160,70,50])
-    red_upper = np.array([180, 255, 255])
-    red_mask = cv2.inRange(hsv, red_lower, red_upper)
-    result_red = cv2.bitwise_and(frame, frame, mask=red_mask)
-    print (type(result_red))
+ # continutous capturing pictures
+ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+   frame = frame.array
+   #Part D: Color Detection
+   hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    # Green Color Detection
-    green_lower = np.array([50, 255, 255])
-    green_upper = np.array([70, 255, 255])
-    green_mask = cv2.inRange(hsv, green_lower, green_upper)
-    result_green = cv2.bitwise_and(frame, frame, mask=green_mask)    
-    print (type(result_green))
 
-    # Blue Color Detection
-    blue_lower=np.array([100,150,0])
-    blue_upper=np.array([120,255,255])
-    blue_mask = cv2.inRange(hsv, blue_lower, blue_upper)    
-    result_blue = cv2.bitwise_and(frame, frame, mask = blue_mask)
-    print (type(result_blue))
+   # Black Color Detection
+   black_lower = np.array([0,0,0])
+   black_upper = np.array([180, 255, 255])
+   black_mask = cv2.inRange(hsv, black_lower, black_upper)
+   result_black = cv2.bitwise_and(frame, frame, mask=black_mask)
+   print (type(result_black))
+   # Red Color Detection
+   red_lower = np.array([160,70,50])
+   red_upper = np.array([180, 255, 255])
+   red_mask = cv2.inRange(hsv, red_lower, red_upper)
+   result_red = cv2.bitwise_and(frame, frame, mask=red_mask)
+   print (type(result_red))
 
-    # Display the final result
-    cv2.imshow("window",result_black)
-    print(result_black)
-    rawCapture.truncate(0) #Stop rawCapture to clear the stream in preparation for the next frame
 
-    # Solution : Move rightward, upwards, leftwards, downwards and repeat
-    while True:
-        # Manually action if needed
-        x = input()
+   # Green Color Detection
+   green_lower = np.array([50, 255, 255])
+   green_upper = np.array([70, 255, 255])
+   green_mask = cv2.inRange(hsv, green_lower, green_upper)
+   result_green = cv2.bitwise_and(frame, frame, mask=green_mask)   
+   print (type(result_green))
 
-        # Automatic reaction to start
-        GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
-        GPIO.output(input2,GPIO.LOW)
-        print("forward")
 
-        GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
-        GPIO.output(input2,GPIO.LOW)
-        print("forward")
+   # Blue Color Detection
+   blue_lower=np.array([100,150,0])
+   blue_upper=np.array([120,255,255])
+   blue_mask = cv2.inRange(hsv, blue_lower, blue_upper)   
+   result_blue = cv2.bitwise_and(frame, frame, mask = blue_mask)
+   print (type(result_blue))
 
-        # if detected any markers
-        if np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0): 
-            # began to loop until the line is clean
-            while np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0): 
-                # make wheels move forwards
-                GPIO.output(input1,GPIO.HIGH)
-                GPIO.output(input2,GPIO.LOW)
-                print("forward")
 
-                # if all colored markers cannot be detected / the board becomes white
-                if np.any(result_black == 0 and result_red == 0 and result_green == 0 and result_blue == 0):
-                    GPIO.output(input1,GPIO.LOW) # left and right wheel moves backwards
-                    GPIO.output(input2,GPIO.HIGH)
-                    print("backward")
+   # Display the final result
+   cv2.imshow("window",result_black)
+   print(result_black)
+   rawCapture.truncate(0) #Stop rawCapture to clear the stream in preparation for the next frame
 
-                    # if any marker are left
-                    if np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0): 
-                        while np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0): 
-                            GPIO.output(input1,GPIO.LOW) # Conitune on moving backwards
-                            GPIO.output(input2,GPIO.HIGH)
-                            print("backward")
-                             
-                            if np.any(result_black == 0 and result_red == 0 and result_green == 0 and result_blue == 0):
-                                # make wheels move forwards
-                                GPIO.output(input1,GPIO.HIGH)
-                                GPIO.output(input2,GPIO.LOW)
-                                print("forward")
-                                break
 
-        # when loop is over, default to keep moving forwards
-        GPIO.output(input1,GPIO.HIGH)
-        GPIO.output(input2,GPIO.LOW)
-        print("forward")
+   # Solution : Move rightward, upwards, leftwards, downwards and repeat
+   while True:
+       # Manually action if needed
+       x = input()
+       '''
+       # Automatic reaction to start
+       GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+       GPIO.output(input2,GPIO.LOW)
+       print("forward")
 
-        # type in r to run
-        if x == 'r':
-            if(temp1==1):
-             GPIO.output(input1,GPIO.HIGH)
-             GPIO.output(input2,GPIO.LOW)
-             print("forward")
-             x='z'
-            else:
-             GPIO.output(input1,GPIO.LOW)
-             GPIO.output(input2,GPIO.HIGH)
-             print("backward")
-             x='z'
 
-        # type in s to stop
-        elif x == 's':
-            print("stop")
-            GPIO.output(input1,GPIO.LOW)
-            GPIO.output(input2,GPIO.LOW)
-            x='z'
+       GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
+       GPIO.output(input2,GPIO.LOW)
+       print("forward")
+       '''
+       # if detected any markers
+       if np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+           # began to loop until the line is clean
+           while np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+               # make wheels move forwards
+               GPIO.output(input1,GPIO.HIGH)
+               GPIO.output(input2,GPIO.LOW)
 
-        # type in f to move forward
-        elif x == 'f':
-            print("forward")
+
+               GPIO.output(input3,GPIO.HIGH)
+               GPIO.output(input4,GPIO.LOW)
+               print("forward 1")
+
+
+               # if all colored markers cannot be detected / the board becomes white
+               if np.any(result_black == 0 and result_red == 0 and result_green == 0 and result_blue == 0):
+                   GPIO.output(input1,GPIO.LOW) # left and right wheel moves backwards
+                   GPIO.output(input2,GPIO.HIGH)
+
+
+                   GPIO.output(input3,GPIO.LOW)
+                   GPIO.output(input4,GPIO.HIGH)
+                   print("backward 1")
+
+
+                   # if any marker are left
+                   if np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+                       while np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+                           GPIO.output(input1,GPIO.LOW) # Conitune on moving backwards
+                           GPIO.output(input2,GPIO.HIGH)
+
+
+                           GPIO.output(input3,GPIO.LOW)
+                           GPIO.output(input4,GPIO.HIGH)
+                           print("backward 2")
+                           
+                           if np.any(result_black == 0 and result_red == 0 and result_green == 0 and result_blue == 0):
+                               # make wheels move forwards
+                               GPIO.output(input1,GPIO.HIGH)
+                               GPIO.output(input2,GPIO.LOW)
+
+
+                               GPIO.output(input3,GPIO.HIGH)
+                               GPIO.output(input4,GPIO.LOW)
+                               print("forward 2")
+                               break
+
+
+       # when loop is over, default to keep moving forwards
+       GPIO.output(input1,GPIO.HIGH)
+       GPIO.output(input2,GPIO.LOW)
+       print("forward 3")
+
+
+       GPIO.output(input3,GPIO.HIGH)
+       GPIO.output(input4,GPIO.LOW)
+
+
+       # type in r to run
+       if x == 'r':
+           if(temp1==1):
             GPIO.output(input1,GPIO.HIGH)
             GPIO.output(input2,GPIO.LOW)
-            temp1=1
+            print("forward 4")
             x='z'
-
-        # type in b to move backward
-        elif x == 'b':
-            print("backward")
+           else:
             GPIO.output(input1,GPIO.LOW)
             GPIO.output(input2,GPIO.HIGH)
-            temp1=0
+            print("backward 5")
             x='z'
 
-        # type in l to change the moving frequency to low
-        elif x == 'l':
-            print("low")
-            p.ChangeDutyCycle(25)
-            x='z'
 
-        # type in m to change the moving frequency to medium
-        elif x == 'm':
-            print("medium")
-            p.ChangeDutyCycle(50)
-            x='z'
-
-        # type in h to change the moving frequency to high
-        elif x == 'h':
-            print("high")
-            p.ChangeDutyCycle(75)
-            x='z'
-
-        # Manually turn left
-        #type in r to moves right
-        elif x == 'left':
-            GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
-            GPIO.output(input2,GPIO.LOW)
-            print("turning left now")
-            GPIO.output(input1,GPIO.LOW) # left wheel moves backwards
-            GPIO.output(input2,GPIO.HIGH)
-            print("turning right now")
-
-        # Manully turn right if needed
-        elif x == 'right':
-            GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
-            GPIO.output(input2,GPIO.LOW)
-            print("turning left now")
-            GPIO.output(input1,GPIO.LOW) # right wheel moves backwards
-            GPIO.output(input2,GPIO.HIGH)
-            print("turning right now")
-         
-        # type in e to end
-        elif x == 'e':
-            GPIO.cleanup()
-            break
-        
-        # if error exists
-        else:
-            print("<<<  Input Error!! >>>")
-            print("Please enter the right instructions to continue.....")
-            print("Available instructions: r , s, f, b , l, m, h, e")
+       # type in s to stop
+       elif x == 's':
+           print("stop")
+           GPIO.output(input1,GPIO.LOW)
+           GPIO.output(input2,GPIO.LOW)
+           x='z'
 
 
+       # type in f to move forward
+       elif x == 'f':
+           print("forward 6")
+           GPIO.output(input1,GPIO.HIGH)
+           GPIO.output(input2,GPIO.LOW)
+           temp1=1
+           x='z'
 
+
+       # type in b to move backward
+       elif x == 'b':
+           print("backward 7")
+           GPIO.output(input1,GPIO.LOW)
+           GPIO.output(input2,GPIO.HIGH)
+           temp1=0
+           x='z'
+
+
+       # type in l to change the moving frequency to low
+       elif x == 'l':
+           print("low")
+           p.ChangeDutyCycle(25)
+           x='z'
+
+
+       # type in m to change the moving frequency to medium
+       elif x == 'm':
+           print("medium")
+           p.ChangeDutyCycle(50)
+           x='z'
+
+
+       # type in h to change the moving frequency to high
+       elif x == 'h':
+           print("high")
+           p.ChangeDutyCycle(75)
+           x='z'
+
+
+       # Manually turn left
+       #type in r to moves right
+       elif x == 'left':
+           GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
+           GPIO.output(input2,GPIO.LOW)
+           print("turning left now")
+           GPIO.output(input3,GPIO.LOW) # left wheel moves backwards
+           GPIO.output(input4,GPIO.HIGH)
+           print("turning right now")
+
+
+       # Manully turn right if needed
+       elif x == 'right':
+           GPIO.output(input3,GPIO.HIGH) # left wheel moves forwards
+           GPIO.output(input4,GPIO.LOW)
+           print("turning left now")
+           GPIO.output(input1,GPIO.LOW) # right wheel moves backwards
+           GPIO.output(input2,GPIO.HIGH)
+           print("turning right now")
        
+       # type in e to end
+       elif x == 'e':
+           GPIO.cleanup()
+           break
+      
+       # if error exists
+       else:
+           print("<<<  Input Error!! >>>")
+           print("Please enter the right instructions to continue.....")
+           print("Available instructions: r , s, f, b , l, m, h, e")
 
-    # GPIO.cleanup()
+
+
+
+   # GPIO.cleanup()
+
+
+
+
+
+
+
+#Part A
+import cv2
+import numpy as np
+from picamera import PiCamera
+from picamera.array import PiRGBArray
+import RPi.GPIO as GPIO       
+from time import sleep
+# GPIO Setup
+GPIO.setwarnings(False)
+
+
+#Part B: Setup the input and output
+
+
+# Left wheel
+input1 = 14
+input2 = 4
+en = 25
+temp1=1
+
+
+# Right wheel
+input3 = 17
+input4 = 5
+en2 = 26
+
+
+# Set variable for servoPin left wheel
+servoPin = 17
+
+
+# Set variable for servoPin right wheel
+servoPin2 = 18
+
+
+# Set GPIO mode to GPIO.BCM
+GPIO.setmode(GPIO.BCM)
+
+
+# Set servoPin as GPIO.OUT for left wheel
+GPIO.setup(servoPin,GPIO.OUT)
+pwm = GPIO.PWM(servoPin, 100)
+
+
+# Set servoPin2 as GPIO.OUT for right wheel
+GPIO.setup(servoPin2,GPIO.OUT)
+pwm = GPIO.PWM(servoPin2,100)
+
+
+# Set GPIO mode to GPIO.BCM
+GPIO.setmode(GPIO.BCM)
+
+
+# Set for output for left wheel
+GPIO.setup(input1,GPIO.OUT)
+GPIO.setup(input2,GPIO.OUT)
+GPIO.setup(en,GPIO.OUT)
+GPIO.output(input1,GPIO.HIGH)
+GPIO.output(input2,GPIO.LOW)
+p=GPIO.PWM(en,1000)
+
+
+# Set for output for right wheel
+GPIO.setup(input3,GPIO.OUT)
+GPIO.setup(input4,GPIO.OUT)
+GPIO.setup(en2,GPIO.OUT)
+GPIO.output(input3,GPIO.HIGH)
+GPIO.output(input4,GPIO.LOW)
+p2=GPIO.PWM(en2,1000)
+
+
+# Set startup
+p.start(99)
+p2.start(99)
+print("\n")
+print("The default speed & direction of motor is LOW & Forward.....")
+print("r-run s-stop f-forward b-backward l-low m-medium h-high e-exit")
+print("\n")   
+
+
+# GPIO.output(input1,GPIO.HIGH)
+# GPIO.output(input2,GPIO.HIGH)
+
+
+# Automatic reaction to start
+GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+#GPIO.output(input2,GPIO.LOW)
+print("forward")
+# 
+# GPIO.output(input3,GPIO.HIGH)
+# GPIO.output(input4,GPIO.HIGH)
+
+GPIO.output(input3,GPIO.HIGH) # right wheel moves forwards
+#GPIO.output(input4,GPIO.LOW)
+print("forward")
+
+
+#Part C: Pi Camera Setup
+while(True):
+ # Make a camera object
+ camera = PiCamera()
+ camera.resolution = (640,480)
+ camera.framerate = 30
+ # Set camera resolution & frame rate
+ rawCapture = PiRGBArray(camera, size=(640,480))
+ pixels = 640*480
+ 
+ # continutous capturing pictures
+ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+   frame = frame.array
+   #Part D: Color Detection
+   hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+
+   # Black Color Detection
+   black_lower = np.array([0,0,0])
+   black_upper = np.array([180, 255, 255])
+   black_mask = cv2.inRange(hsv, black_lower, black_upper)
+   result_black = cv2.bitwise_and(frame, frame, mask=black_mask)
+   print (type(result_black))
+   # Red Color Detection
+   red_lower = np.array([160,70,50])
+   red_upper = np.array([180, 255, 255])
+   red_mask = cv2.inRange(hsv, red_lower, red_upper)
+   result_red = cv2.bitwise_and(frame, frame, mask=red_mask)
+   print (type(result_red))
+
+
+   # Green Color Detection
+   green_lower = np.array([50, 255, 255])
+   green_upper = np.array([70, 255, 255])
+   green_mask = cv2.inRange(hsv, green_lower, green_upper)
+   result_green = cv2.bitwise_and(frame, frame, mask=green_mask)   
+   print (type(result_green))
+
+
+   # Blue Color Detection
+   blue_lower=np.array([100,150,0])
+   blue_upper=np.array([120,255,255])
+   blue_mask = cv2.inRange(hsv, blue_lower, blue_upper)   
+   result_blue = cv2.bitwise_and(frame, frame, mask = blue_mask)
+   print (type(result_blue))
+
+
+   # Display the final result
+   cv2.imshow("window",result_black)
+   print(result_black)
+   rawCapture.truncate(0) #Stop rawCapture to clear the stream in preparation for the next frame
+
+
+   # Solution : Move rightward, upwards, leftwards, downwards and repeat
+   while True:
+       # Manually action if needed
+       x = input()
+       '''
+       # Automatic reaction to start
+       GPIO.output(input1,GPIO.HIGH) # left wheel moves forwards
+       GPIO.output(input2,GPIO.LOW)
+       print("forward")
+
+
+       GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
+       GPIO.output(input2,GPIO.LOW)
+       print("forward")
+       '''
+       # if detected any markers
+       if np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+           # began to loop until the line is clean
+           while np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+               # make wheels move forwards
+               GPIO.output(input1,GPIO.HIGH)
+               #GPIO.output(input2,GPIO.LOW)
+
+
+               GPIO.output(input3,GPIO.HIGH)
+               #GPIO.output(input4,GPIO.LOW)
+               print("forward 1")
+
+
+               # if all colored markers cannot be detected / the board becomes white
+               if np.any(result_black == 0 and result_red == 0 and result_green == 0 and result_blue == 0):
+                   GPIO.output(input1,GPIO.LOW) # left and right wheel moves backwards
+                   GPIO.output(input2,GPIO.HIGH)
+
+
+                   GPIO.output(input3,GPIO.LOW)
+                   GPIO.output(input4,GPIO.HIGH)
+                   print("backward 1")
+
+
+                   # if any marker are left
+                   if np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+                       while np.any(result_black != 0 or result_red != 0 or result_green != 0 or result_blue != 0):
+                           GPIO.output(input1,GPIO.LOW) # Conitune on moving backwards
+                           GPIO.output(input2,GPIO.HIGH)
+
+
+                           GPIO.output(input3,GPIO.LOW)
+                           GPIO.output(input4,GPIO.HIGH)
+                           print("backward 2")
+                           
+                           if np.any(result_black == 0 and result_red == 0 and result_green == 0 and result_blue == 0):
+                               # make wheels move forwards
+                               GPIO.output(input1,GPIO.HIGH)
+                               GPIO.output(input2,GPIO.LOW)
+
+
+                               GPIO.output(input3,GPIO.HIGH)
+                               GPIO.output(input4,GPIO.LOW)
+                               print("forward 2")
+                               break
+
+
+       # when loop is over, default to keep moving forwards
+       GPIO.output(input1,GPIO.HIGH)
+       GPIO.output(input2,GPIO.LOW)
+       print("forward 3")
+
+
+       GPIO.output(input3,GPIO.HIGH)
+       GPIO.output(input4,GPIO.LOW)
+
+
+       # type in r to run
+       if x == 'r':
+           if(temp1==1):
+            GPIO.output(input1,GPIO.HIGH)
+            GPIO.output(input2,GPIO.LOW)
+            print("forward 4")
+            x='z'
+           else:
+            GPIO.output(input1,GPIO.LOW)
+            GPIO.output(input2,GPIO.HIGH)
+            print("backward 5")
+            x='z'
+
+
+       # type in s to stop
+       elif x == 's':
+           print("stop")
+           GPIO.output(input1,GPIO.LOW)
+           GPIO.output(input2,GPIO.LOW)
+           x='z'
+
+
+       # type in f to move forward
+       elif x == 'f':
+           print("forward 6")
+           GPIO.output(input1,GPIO.HIGH)
+           GPIO.output(input2,GPIO.LOW)
+           temp1=1
+           x='z'
+
+
+       # type in b to move backward
+       elif x == 'b':
+           print("backward 7")
+           GPIO.output(input1,GPIO.LOW)
+           GPIO.output(input2,GPIO.HIGH)
+           temp1=0
+           x='z'
+
+
+       # type in l to change the moving frequency to low
+       elif x == 'l':
+           print("low")
+           p.ChangeDutyCycle(25)
+           x='z'
+
+
+       # type in m to change the moving frequency to medium
+       elif x == 'm':
+           print("medium")
+           p.ChangeDutyCycle(50)
+           x='z'
+
+
+       # type in h to change the moving frequency to high
+       elif x == 'h':
+           print("high")
+           p.ChangeDutyCycle(75)
+           x='z'
+
+
+       # Manually turn left
+       #type in r to moves right
+       elif x == 'left':
+           GPIO.output(input1,GPIO.HIGH) # right wheel moves forwards
+           GPIO.output(input2,GPIO.LOW)
+           print("turning left now")
+           GPIO.output(input3,GPIO.LOW) # left wheel moves backwards
+           GPIO.output(input4,GPIO.HIGH)
+           print("turning right now")
+
+
+       # Manully turn right if needed
+       elif x == 'right':
+           GPIO.output(input3,GPIO.HIGH) # left wheel moves forwards
+           GPIO.output(input4,GPIO.LOW)
+           print("turning left now")
+           GPIO.output(input1,GPIO.LOW) # right wheel moves backwards
+           GPIO.output(input2,GPIO.HIGH)
+           print("turning right now")
+       
+       # type in e to end
+       elif x == 'e':
+           GPIO.cleanup()
+           break
+      
+       # if error exists
+       else:
+           print("<<<  Input Error!! >>>")
+           print("Please enter the right instructions to continue.....")
+           print("Available instructions: r , s, f, b , l, m, h, e")
+
+
+
+
+   # GPIO.cleanup()
